@@ -1,0 +1,82 @@
+{
+  "name": "Tribeca Inbound (Reply -> App)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": { "item": [{ "mode": "everyMinute" }] },
+        "simple": true,
+        "filters": {}
+      },
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [-160, 300],
+      "notesInFlow": true,
+      "notes": "Re-attach Gmail OAuth credential after import. Polls ~every minute (≈1 min latency)."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "typeValidation": "loose" },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-subject",
+              "leftValue": "={{ $json.subject || $json.Subject || '' }}",
+              "rightValue": "[Tribeca Task #",
+              "operator": { "type": "string", "operation": "contains" }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      "name": "Subject contains tag?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [80, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract task_id from the subject (survives Re:/Re: Re:) and clean the reply body.\n// NOTE: quote/signature stripping is a known-fragile heuristic — fine for controlled test accounts.\nconst out = [];\nfor (const item of $input.all()) {\n  const j = item.json;\n  const subject = j.subject || j.Subject || (j.headers && (j.headers.subject || j.headers.Subject)) || '';\n  const m = String(subject).match(/#([A-Za-z0-9]+)/);\n  if (!m) continue;\n  const task_id = m[1];\n\n  let body = j.text || j.textPlain || j.body || j.snippet || '';\n  const lines = String(body).split(/\\r?\\n/);\n  const kept = [];\n  for (const line of lines) {\n    const t = line.trim();\n    if (/^On .*wrote:$/.test(t)) break;          // \"On <date>, <name> wrote:\"\n    if (t.startsWith('>')) break;                 // quoted history\n    if (/^-----Original Message-----/.test(t)) break;\n    if (/^From:\\s/.test(t)) break;                // forwarded header block\n    kept.push(line);\n  }\n  let reply = kept.join('\\n').trim();\n  reply = reply.split(/\\n-- \\n/)[0].trim();       // strip signature after a '-- ' delimiter\n\n  const from = j.from || (j.headers && j.headers.from) || '';\n  const email = String(from).match(/[\\w.+-]+@[\\w.-]+\\.[\\w.-]+/);\n\n  out.push({ json: {\n    task_id,\n    assignee_email: email ? email[0] : '',\n    reply_text: reply,\n    received_at: new Date().toISOString()\n  }});\n}\nreturn out;"
+      },
+      "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "name": "Extract + Clean",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [320, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://vgeriftinzhuoivfavdp.supabase.co/functions/v1/inbound",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+      "name": "POST to /inbound",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [560, 300],
+      "notesInFlow": true,
+      "notes": "URL is pre-filled with the deployed Supabase /inbound endpoint. Change it if you redeploy elsewhere."
+    }
+  ],
+  "connections": {
+    "Gmail Trigger": {
+      "main": [[{ "node": "Subject contains tag?", "type": "main", "index": 0 }]]
+    },
+    "Subject contains tag?": {
+      "main": [[{ "node": "Extract + Clean", "type": "main", "index": 0 }]]
+    },
+    "Extract + Clean": {
+      "main": [[{ "node": "POST to /inbound", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}
