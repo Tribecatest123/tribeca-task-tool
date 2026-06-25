@@ -3,6 +3,7 @@
 // Does NOT save anything. The app injects today's date + Asia/Kolkata so relative
 // dates ("next Wednesday 3pm") resolve to the right wall-clock hour on the calendar.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const TZ = "Asia/Kolkata";
 const OFFSET = "+05:30"; // Asia/Kolkata has no DST, so a fixed offset is safe.
@@ -59,9 +60,15 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "POST only" }), { status: 405, headers: { ...cors, "Content-Type": "application/json" } });
   }
 
-  const apiKey = Deno.env.get("OPENAI_API_KEY");
+  // Prefer the env secret; fall back to the private tt_config table so the key never lives in code.
+  let apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: "OPENAI_API_KEY secret is not set on this Supabase project." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data } = await sb.from("tt_config").select("value").eq("key", "openai_api_key").maybeSingle();
+    apiKey = data?.value;
+  }
+  if (!apiKey) {
+    return new Response(JSON.stringify({ error: "OpenAI key not configured (set OPENAI_API_KEY secret or tt_config row)." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
   }
 
   const { text } = await req.json().catch(() => ({ text: "" }));
