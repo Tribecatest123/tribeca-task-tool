@@ -91,13 +91,22 @@ prompt so "next Wednesday 3pm" resolves to the correct wall-clock hour.
 
 ## Setup / run instructions
 
-### 1. Set the two Edge Function secrets
-Supabase Dashboard -> Project Settings -> Edge Functions -> Secrets (or the CLI):
-```
-OPENAI_API_KEY            = <your OpenAI key>
-N8N_OUTBOUND_WEBHOOK_URL  = <filled in step 3 below>
-```
+### 1. Configure the OpenAI key and the n8n webhook URL
+Two values are needed. Each can be supplied **either** as an Edge Function secret **or** as a row
+in the private `tt_config` table — the functions prefer the env secret and fall back to `tt_config`.
+
+| Value | Env secret | tt_config key |
+|---|---|---|
+| OpenAI key | `OPENAI_API_KEY` | `openai_api_key` |
+| n8n outbound webhook URL | `N8N_OUTBOUND_WEBHOOK_URL` | `n8n_outbound_webhook_url` |
+
+Env secret: Supabase Dashboard -> Project Settings -> Edge Functions -> Secrets.
+tt_config: `insert into tt_config(key,value) values ('openai_api_key','sk-...');`
+
 `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically — do not set them.
+
+(In the live deployment the OpenAI key is already configured via `tt_config`; the n8n webhook URL
+is set the same way once the outbound workflow is activated and its production URL is known.)
 
 ### 2. Import the n8n workflows
 Import `n8n/outbound_workflow.json` and `n8n/inbound_workflow.json` into your n8n instance.

@@ -69,7 +69,12 @@ Deno.serve(async (req) => {
     notes: row.notes,
   };
 
-  const n8nUrl = Deno.env.get("N8N_OUTBOUND_WEBHOOK_URL");
+  // Prefer the env secret; fall back to the private tt_config table.
+  let n8nUrl = Deno.env.get("N8N_OUTBOUND_WEBHOOK_URL");
+  if (!n8nUrl) {
+    const { data } = await supabase.from("tt_config").select("value").eq("key", "n8n_outbound_webhook_url").maybeSingle();
+    n8nUrl = data?.value ?? undefined;
+  }
   if (!n8nUrl) {
     await supabase.from("tt_tasks").update({ status: "Notify failed" }).eq("task_id", task_id);
     return json({ task_id, status: "notify_failed", error: "N8N_OUTBOUND_WEBHOOK_URL secret not set", calendar_event_link: null });
