@@ -16,10 +16,16 @@ The backend and frontend run on Supabase (Postgres + Edge Functions). Base:
 | Surface | URL |
 |---|---|
 | **App (frontend)** | **`https://tribecatest123.github.io/tribeca-task-tool/`** |
+| Stakeholder overview (deck) | `https://tribecatest123.github.io/tribeca-task-tool/stakeholder-overview.html` |
 | POST /parse | `.../functions/v1/parse` |
 | POST /approve | `.../functions/v1/approve` |
 | POST /inbound (public, n8n -> app) | `.../functions/v1/inbound` |
 | GET /tasks, GET /tasks?id= | `.../functions/v1/tasks` |
+
+A plain-language stakeholder presentation (the flow, where data lives, why AI
+parsing sits in Supabase vs n8n, and the production roadmap) lives at
+[`docs/stakeholder-overview.html`](docs/stakeholder-overview.html) — open it in a
+browser to present full-screen, or use its **Print / PDF** button to export.
 
 The API base for all four endpoints is `https://vgeriftinzhuoivfavdp.supabase.co/functions/v1`.
 
@@ -197,7 +203,8 @@ n8n/
   inbound_workflow.json
   SETUP.md
 docs/
-  index.html        # GitHub Pages frontend (absolute API base + anon headers)
+  index.html                 # GitHub Pages frontend (absolute API base + anon headers)
+  stakeholder-overview.html  # plain-language stakeholder presentation
 .env.example
 README.md
 ```
