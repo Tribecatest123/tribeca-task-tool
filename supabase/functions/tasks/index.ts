@@ -25,7 +25,11 @@ Deno.serve(async (req) => {
     const { data, error } = await supabase.from("tt_tasks").select("*").eq("task_id", id).maybeSingle();
     if (error) return json({ error: error.message }, 500);
     if (!data) return json({ error: "not found" }, 404);
-    return json(data);
+    // Attach the full reply thread (oldest first) for the detail view.
+    const { data: replies } = await supabase.from("tt_replies")
+      .select("reply_text, assignee_email, received_at")
+      .eq("task_id", id).order("received_at", { ascending: true });
+    return json({ ...data, replies: replies ?? [] });
   }
 
   const { data, error } = await supabase.from("tt_tasks").select("*").order("created_at", { ascending: false });

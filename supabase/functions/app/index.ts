@@ -170,21 +170,26 @@ const html = `<!DOCTYPE html>
     try {
       const r = await fetch(FN + "/approve", { method:"POST", headers: HDRS, body: JSON.stringify(payload) });
       const d = await r.json();
-      const link = d.calendar_event_link ? '<br>Calendar: <a href="'+d.calendar_event_link+'" target="_blank">open event</a>' : "";
       if (d.status === "notified") {
         // Success: collapse the confirm card and reset the form so a finished task doesn't linger.
         document.getElementById("confirmCard").classList.add("hidden");
         document.getElementById("instruction").value = "";
-        document.getElementById("newMsg").innerHTML = '<div class="err">Task <b>'+esc(d.task_id)+'</b> created &mdash; assignee notified.'+link+'</div>';
+        const cal = d.calendar_event_link ? ' and a calendar invitation' : '';
+        const calLink = d.calendar_event_link ? '<br>Calendar: <a href="'+d.calendar_event_link+'" target="_blank">open event</a>' : "";
+        document.getElementById("newMsg").innerHTML =
+          '<div class="err"><b>Task created successfully.</b> The assignee has been notified by email'+cal+'.'
+          + calLink
+          + '<br><button class="btn secondary" style="margin-top:10px" onclick="dismissMsg()">Dismiss</button></div>';
       } else {
         const warn = d.error ? '<br><span class="muted">Note: '+d.error+'</span>' : "";
-        out.innerHTML = '<div class="err">Task <b>'+esc(d.task_id)+'</b> &mdash; status: <b>'+esc(d.status)+'</b>'+warn+'</div>';
+        out.innerHTML = '<div class="err">Could not notify the assignee &mdash; status: <b>'+esc(d.status)+'</b>'+warn+'</div>';
       }
     } catch (e) {
       out.innerHTML = '<div class="err">Approve failed: ' + e.message + "</div>";
     } finally { btn.disabled = false; btn.textContent = "Approve & Notify"; }
   }
 
+  function dismissMsg(){ document.getElementById("newMsg").innerHTML = ""; }
   function val(id){ return document.getElementById(id).value.trim(); }
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
@@ -216,12 +221,22 @@ const html = `<!DOCTYPE html>
     b.innerHTML = '<p class="muted">Loading...</p>';
     const r = await fetch(FN + "/tasks?id=" + encodeURIComponent(id), { headers: AUTH });
     const t = await r.json();
-    let reply = '<p class="muted">No reply received yet.</p>';
-    if (t.reply_text) {
+    const replies = Array.isArray(t.replies) ? t.replies : [];
+    let reply;
+    if (replies.length) {
+      reply = replies.map(function(r){
+        return '<div class="reply">'+esc(r.reply_text)+'</div>'
+          + '<p class="muted" style="margin:6px 0 16px">From '+esc(t.assignee_name)+' &lt;'+esc(r.assignee_email||t.assignee_email)+'&gt;'
+          + (r.received_at ? ' at ' + new Date(r.received_at).toLocaleString() : '') + '</p>';
+      }).join('');
+    } else if (t.reply_text) {
       reply = '<div class="reply">'+esc(t.reply_text)+'</div>'
         + '<p class="muted" style="margin-top:8px">From '+esc(t.assignee_name)+' &lt;'+esc(t.assignee_email)+'&gt;'
         + (t.reply_received_at ? ' at ' + new Date(t.reply_received_at).toLocaleString() : '') + '</p>';
+    } else {
+      reply = '<p class="muted">No reply received yet.</p>';
     }
+    const replyHeading = replies.length > 1 ? 'Replies (' + replies.length + ')' : 'Reply';
     const cal = t.calendar_event_link ? '<a href="'+t.calendar_event_link+'" target="_blank">open event</a>' : '&mdash;';
     b.innerHTML =
       '<div class="kv">'
@@ -236,7 +251,7 @@ const html = `<!DOCTYPE html>
       + '<div>Notes</div><div>'+esc(t.notes)+'</div>'
       + '<div>Calendar</div><div>'+cal+'</div>'
       + '</div>'
-      + '<h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px">Reply</h3>'
+      + '<h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px">'+replyHeading+'</h3>'
       + reply;
   }
 </script>
