@@ -5,41 +5,61 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Tribeca Task Tool</title>
 <style>
-  :root { --ink:#111; --line:#d8d8d8; --muted:#666; --bg:#f4f4f4; }
+  :root { --ink:#111; --line:#e5e5e5; --muted:#6b6b6b; --bg:#f6f6f7; --r:10px; }
   * { box-sizing: border-box; }
+  html, body { max-width:100%; overflow-x:hidden; }
   body { margin:0; font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-         color: var(--ink); background: var(--bg); line-height: 1.45; }
-  header { background:#111; color:#fff; padding:16px 24px; }
-  header h1 { margin:0; font-size:18px; font-weight:700; letter-spacing:.3px; }
-  header p { margin:4px 0 0; font-size:12px; color:#bbb; }
+         color: var(--ink); background: var(--bg); line-height: 1.5; }
+  header { background:#111; color:#fff; padding:18px 24px; }
+  header h1 { margin:0; font-size:19px; font-weight:700; letter-spacing:.2px; }
+  header p { margin:4px 0 0; font-size:12.5px; color:#b9b9b9; }
   .wrap { max-width: 880px; margin: 24px auto; padding: 0 16px; }
-  nav { display:flex; gap:8px; margin-bottom:16px; }
-  nav button { border:1px solid var(--line); background:#fff; padding:8px 14px; cursor:pointer; font-size:14px; }
+  nav { display:flex; gap:8px; margin-bottom:18px; }
+  nav button { border:1px solid var(--line); background:#fff; padding:9px 16px; cursor:pointer; font-size:14px; border-radius:999px; }
   nav button.active { background:#111; color:#fff; border-color:#111; font-weight:600; }
-  .card { background:#fff; border:1px solid var(--line); margin-bottom:16px; }
-  .card h2 { margin:0; background:#111; color:#fff; font-size:13px; font-weight:700;
-             text-transform:uppercase; letter-spacing:.5px; padding:10px 14px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:var(--r); margin-bottom:16px; overflow:hidden; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  .card h2 { margin:0; background:#111; color:#fff; font-size:12.5px; font-weight:700;
+             text-transform:uppercase; letter-spacing:.6px; padding:11px 16px; }
   .card .body { padding:16px; }
-  textarea { width:100%; min-height:80px; padding:10px; border:1px solid var(--line); font-size:14px; font-family:inherit; }
-  label { display:block; font-size:12px; color:var(--muted); margin:10px 0 4px; text-transform:uppercase; letter-spacing:.4px; }
-  input, select { width:100%; padding:8px; border:1px solid var(--line); font-size:14px; font-family:inherit; }
+  textarea { width:100%; min-height:90px; padding:11px; border:1px solid var(--line); border-radius:8px; font-size:14px; font-family:inherit; resize:vertical; }
+  label { display:block; font-size:11.5px; color:var(--muted); margin:10px 0 4px; text-transform:uppercase; letter-spacing:.4px; }
+  input, select { width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; font-family:inherit; background:#fff; }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:#111; }
   .grid { display:grid; grid-template-columns:1fr 1fr; gap:0 16px; }
-  .btn { background:#111; color:#fff; border:none; padding:10px 18px; font-size:14px; cursor:pointer; margin-top:14px; font-weight:600; }
+  .btn { background:#111; color:#fff; border:none; padding:10px 18px; font-size:14px; cursor:pointer; margin-top:14px; font-weight:600; border-radius:8px; }
+  .btn:hover { background:#000; }
   .btn.secondary { background:#fff; color:#111; border:1px solid #111; }
+  .btn.secondary:hover { background:#f2f2f2; }
   .btn:disabled { opacity:.5; cursor:default; }
-  table { width:100%; border-collapse:collapse; font-size:14px; }
-  th { background:#111; color:#fff; text-align:left; padding:8px 10px; font-size:11px; text-transform:uppercase; letter-spacing:.4px; }
-  td { padding:8px 10px; border-bottom:1px solid var(--line); }
-  tr.row { cursor:pointer; }
-  tr.row:hover td { background:#fafafa; }
-  .badge { display:inline-block; border:1px solid #111; padding:1px 8px; font-size:11px; text-transform:uppercase; letter-spacing:.4px; }
   .muted { color:var(--muted); font-size:13px; }
-  .kv { display:grid; grid-template-columns:170px 1fr; gap:6px 12px; font-size:14px; }
+  /* Filter bar */
+  .filters { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .filters input, .filters select { flex:1 1 150px; min-width:0; }
+  .filters .btn { margin-top:0; flex:0 0 auto; }
+  /* Task list (responsive cards instead of a table) */
+  .tasklist { display:flex; flex-direction:column; gap:10px; }
+  .titem { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px;
+           border:1px solid var(--line); border-radius:var(--r); padding:13px 15px; background:#fff; cursor:pointer; transition:border-color .12s, box-shadow .12s; }
+  .titem:hover { border-color:#111; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  .titem .t-main { flex:1 1 240px; min-width:0; }
+  .titem .t-title { font-weight:600; font-size:15px; overflow-wrap:anywhere; }
+  .titem .t-sub { color:var(--muted); font-size:12.5px; margin-top:3px; overflow-wrap:anywhere; }
+  .titem .t-meta { display:flex; align-items:center; gap:8px; flex:0 0 auto; }
+  .badge { display:inline-block; border:1px solid #cfcfcf; background:#f2f2f2; color:#222;
+           padding:3px 9px; font-size:10.5px; font-weight:600; border-radius:999px; text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; }
+  .kv { display:grid; grid-template-columns:160px 1fr; gap:8px 12px; font-size:14px; }
   .kv div:nth-child(odd){ color:var(--muted); text-transform:uppercase; font-size:11px; letter-spacing:.4px; padding-top:2px; }
-  .reply { background:#f4f4f4; border-left:3px solid #111; padding:12px; white-space:pre-wrap; font-size:14px; }
-  .err { border:1px solid #111; background:#fff; padding:10px; font-size:13px; }
+  .reply { background:#f6f6f7; border-left:3px solid #111; border-radius:6px; padding:12px; white-space:pre-wrap; overflow-wrap:anywhere; font-size:14px; }
+  .err { border:1px solid var(--line); background:#fff; border-radius:8px; padding:12px; font-size:13.5px; }
   a { color:#111; }
   .hidden { display:none; }
+  @media (max-width:560px) {
+    .grid { grid-template-columns:1fr; }
+    .kv { grid-template-columns:1fr; gap:2px 0; }
+    .kv div:nth-child(even){ margin-bottom:8px; }
+    .titem .t-meta { flex-basis:100%; }
+    .wrap { margin:16px auto; }
+  }
 </style>
 </head>
 <body>
@@ -94,8 +114,14 @@
     <div class="card">
       <h2>Tasks</h2>
       <div class="body">
-        <button class="btn secondary" onclick="loadTasks()">Refresh</button>
-        <div id="taskList" style="margin-top:12px"></div>
+        <div class="filters">
+          <input id="f_search" type="text" placeholder="Search title or assignee" oninput="renderTasks()" />
+          <select id="f_type" onchange="renderTasks()"><option value="">All types</option></select>
+          <select id="f_status" onchange="renderTasks()"><option value="">All statuses</option></select>
+          <button class="btn secondary" onclick="loadTasks()">Refresh</button>
+        </div>
+        <div id="taskCount" class="muted" style="margin:12px 2px"></div>
+        <div id="taskList"></div>
       </div>
     </div>
   </section>
@@ -188,25 +214,67 @@
   function val(id){ return document.getElementById(id).value.trim(); }
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
+  let ALL_TASKS = [];
+
+  function fillSelect(id, values, allLabel) {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    let h = '<option value="">' + allLabel + '</option>';
+    values.forEach(function(v){ h += '<option value="'+esc(v)+'">'+esc(v)+'</option>'; });
+    sel.innerHTML = h;
+    sel.value = cur; // preserve any active selection across refreshes
+  }
+
   async function loadTasks() {
     const el = document.getElementById("taskList");
     el.innerHTML = '<p class="muted">Loading...</p>';
-    const r = await fetch(FN + "/tasks", { headers: AUTH });
-    const d = await r.json();
-    const tasks = d.tasks || [];
-    if (!tasks.length) { el.innerHTML = '<p class="muted">No tasks yet.</p>'; return; }
-    let h = '<table><thead><tr><th>Title</th><th>Assignee</th><th>Type</th><th>Status</th><th>Created</th></tr></thead><tbody>';
-    for (const t of tasks) {
-      h += '<tr class="row" data-id="'+esc(t.task_id)+'">'
-        + '<td>'+esc(t.title)+'</td>'
-        + '<td>'+esc(t.assignee_name)+'</td>'
-        + '<td>'+esc(t.task_type)+'</td>'
-        + '<td><span class="badge">'+esc(t.status)+'</span></td>'
-        + '<td class="muted">'+new Date(t.created_at).toLocaleString()+'</td></tr>';
+    try {
+      const r = await fetch(FN + "/tasks", { headers: AUTH });
+      const d = await r.json();
+      ALL_TASKS = d.tasks || [];
+    } catch (e) {
+      el.innerHTML = '<div class="err">Could not load tasks: ' + e.message + '</div>';
+      return;
     }
-    el.innerHTML = h + "</tbody></table>";
-    el.querySelectorAll("tr.row").forEach(function(tr){
-      tr.addEventListener("click", function(){ detail(tr.getAttribute("data-id")); });
+    const types = Array.from(new Set(ALL_TASKS.map(function(t){return t.task_type;}).filter(Boolean))).sort();
+    const statuses = Array.from(new Set(ALL_TASKS.map(function(t){return t.status;}).filter(Boolean))).sort();
+    fillSelect("f_type", types, "All types");
+    fillSelect("f_status", statuses, "All statuses");
+    renderTasks();
+  }
+
+  function renderTasks() {
+    const el = document.getElementById("taskList");
+    const count = document.getElementById("taskCount");
+    const q = (document.getElementById("f_search").value || "").toLowerCase().trim();
+    const ty = document.getElementById("f_type").value;
+    const st = document.getElementById("f_status").value;
+
+    const rows = (ALL_TASKS || []).filter(function(t){
+      if (ty && t.task_type !== ty) return false;
+      if (st && t.status !== st) return false;
+      if (q) {
+        const hay = ((t.title||"") + " " + (t.assignee_name||"") + " " + (t.assignee_email||"")).toLowerCase();
+        if (hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+
+    if (!ALL_TASKS.length) { count.textContent = ""; el.innerHTML = '<p class="muted">No tasks yet.</p>'; return; }
+    count.textContent = "Showing " + rows.length + " of " + ALL_TASKS.length + " task" + (ALL_TASKS.length===1?"":"s");
+    if (!rows.length) { el.innerHTML = '<p class="muted">No tasks match your filters.</p>'; return; }
+
+    let h = '<div class="tasklist">';
+    for (const t of rows) {
+      const sub = [esc(t.assignee_name||"—"), esc(t.task_type), new Date(t.created_at).toLocaleString()].join(" &middot; ");
+      h += '<div class="titem" data-id="'+esc(t.task_id)+'">'
+        + '<div class="t-main"><div class="t-title">'+esc(t.title)+'</div><div class="t-sub">'+sub+'</div></div>'
+        + '<div class="t-meta"><span class="badge">'+esc(t.status)+'</span></div>'
+        + '</div>';
+    }
+    el.innerHTML = h + "</div>";
+    el.querySelectorAll(".titem").forEach(function(it){
+      it.addEventListener("click", function(){ detail(it.getAttribute("data-id")); });
     });
   }
 
