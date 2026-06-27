@@ -1,0 +1,447 @@
+<title>Tribeca Task Tool — Stakeholder Overview</title>
+<style>
+  :root{
+    --ink:#14171A; --paper:#FFFFFF; --muted:#5B6168; --line:#E2E4E7;
+    --panel:#F4F5F6; --band:#111418; --band-soft:#2A2F35; --hair:#D4D7DB;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{background:#0C0E11;font-family:var(--sans);color:var(--ink);}
+  #viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  #stage{width:1280px;height:720px;position:relative;transform-origin:center center;
+         box-shadow:0 0 0 1px #2A2F35, 0 24px 70px rgba(0,0,0,.55);}
+
+  .slide{position:absolute;inset:0;background:var(--paper);display:none;flex-direction:column;overflow:hidden;}
+  .slide.active{display:flex;}
+
+  /* Header band */
+  .band{background:var(--band);color:#fff;padding:22px 56px 20px;}
+  .eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#9AA1A8;font-weight:600;margin:0 0 8px;}
+  .band h2{margin:0;font-size:29px;line-height:1.12;font-weight:800;letter-spacing:-.01em;text-wrap:balance;max-width:60ch;}
+
+  .body{flex:1;padding:34px 56px 0;min-height:0;}
+  .foot{display:flex;justify-content:space-between;align-items:center;padding:14px 56px 20px;
+        font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);margin:0 56px;
+        padding-left:0;padding-right:0;letter-spacing:.02em;}
+  .foot .pg{font-variant-numeric:tabular-nums;}
+
+  .lead{font-size:18px;line-height:1.5;color:#2B3036;max-width:74ch;margin:0 0 22px;}
+  .spine{font-size:20px;font-weight:700;letter-spacing:-.01em;color:var(--ink);}
+  .spine span{color:#9AA1A8;font-weight:600;padding:0 8px;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .cards{display:grid;gap:16px;}
+  .cards.c2{grid-template-columns:1fr 1fr;}
+  .cards.c3{grid-template-columns:repeat(3,1fr);}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;}
+  .card h3{margin:0 0 7px;font-size:16.5px;font-weight:700;letter-spacing:-.005em;}
+  .card p{margin:0;font-size:14px;line-height:1.5;color:var(--muted);}
+
+  .colhead{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 12px;}
+
+  ul.clean{list-style:none;margin:0;padding:0;}
+  ul.clean li{position:relative;padding:0 0 11px 22px;font-size:15px;line-height:1.45;color:#2B3036;}
+  ul.clean li::before{content:"";position:absolute;left:0;top:7px;width:7px;height:7px;background:var(--ink);}
+  ul.clean.muted li{color:var(--muted);}
+
+  /* numbered flow */
+  .flow{display:grid;grid-template-columns:repeat(3,1fr);gap:18px 20px;}
+  .step{display:flex;gap:14px;align-items:flex-start;}
+  .num{flex:0 0 auto;width:38px;height:38px;border-radius:50%;background:var(--ink);color:#fff;
+       font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;}
+  .step h3{margin:0 0 4px;font-size:15.5px;font-weight:700;}
+  .step p{margin:0;font-size:13.5px;line-height:1.45;color:var(--muted);}
+
+  /* numbered reason cards */
+  .rcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;display:flex;gap:14px;}
+  .rcard .num{width:34px;height:34px;font-size:15px;}
+  .rcard h3{margin:0 0 5px;font-size:15.5px;font-weight:700;}
+  .rcard p{margin:0;font-size:13.5px;line-height:1.46;color:var(--muted);}
+
+  /* pipeline diagram */
+  .pipe{display:flex;align-items:stretch;gap:0;margin:6px 0 26px;}
+  .pbox{flex:1;background:var(--paper);border:1.5px solid var(--ink);border-radius:10px;
+        padding:16px 14px;text-align:center;display:flex;flex-direction:column;justify-content:center;}
+  .pbox .pt{font-size:15px;font-weight:700;}
+  .pbox .ps{font-size:12px;color:var(--muted);margin-top:3px;}
+  .arrow{flex:0 0 46px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#9AA1A8;font-weight:700;}
+  .note{font-size:13.5px;color:var(--muted);border-left:3px solid var(--ink);padding:8px 0 8px 14px;line-height:1.5;max-width:90ch;}
+
+  /* example panel */
+  .ex{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  .ex .in{background:var(--panel);padding:22px 24px;}
+  .ex .out{background:var(--paper);padding:22px 24px;border-left:1px solid var(--line);}
+  .ex .tag{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 10px;}
+  .ex .q{font-size:16px;line-height:1.5;color:#2B3036;font-style:italic;}
+  .kvp{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px;}
+  .kvp b{color:var(--muted);font-weight:600;}
+
+  /* Cover */
+  .cover{position:absolute;inset:0;background:var(--band);color:#fff;display:none;flex-direction:column;justify-content:center;padding:0 84px;}
+  .cover.active{display:flex;}
+  .cover .ce{font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:#9AA1A8;font-weight:600;margin:0 0 20px;}
+  .cover h1{margin:0;font-size:62px;line-height:1.02;font-weight:800;letter-spacing:-.02em;}
+  .cover .sub{font-size:20px;line-height:1.5;color:#D7DBDF;max-width:60ch;margin:22px 0 0;}
+  .cover .meta{margin-top:40px;display:flex;gap:14px;align-items:center;font-size:13px;color:#9AA1A8;letter-spacing:.04em;}
+  .cover .meta .dot{width:4px;height:4px;border-radius:50%;background:#5B6168;}
+  .cover .rule{margin-top:34px;font-size:13.5px;color:#C3C8CD;letter-spacing:.06em;}
+
+  /* nav */
+  .nav{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;
+       background:rgba(20,23,26,.86);backdrop-filter:blur(6px);border:1px solid #2A2F35;border-radius:999px;padding:7px 10px;z-index:10;}
+  .nav button{background:transparent;border:0;color:#E6E8EA;font-size:13px;font-weight:600;cursor:pointer;
+       padding:7px 12px;border-radius:999px;font-family:var(--sans);}
+  .nav button:hover{background:#2A2F35;}
+  .nav button:focus-visible{outline:2px solid #8A93A0;outline-offset:2px;}
+  .nav .ct{color:#9AA1A8;font-size:12.5px;font-variant-numeric:tabular-nums;min-width:58px;text-align:center;letter-spacing:.04em;}
+  .nav .sep{width:1px;height:18px;background:#2A2F35;}
+
+  @media print{
+    body{background:#fff;}
+    #viewport{position:static;display:block;overflow:visible;}
+    #stage{transform:none!important;width:1280px;height:auto;box-shadow:none!important;}
+    .slide,.cover{display:flex!important;position:relative;inset:auto;page-break-after:always;height:720px;}
+    .nav{display:none;}
+    @page{size:13.333in 7.5in;margin:0;}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+
+<div id="viewport">
+  <div id="stage">
+
+    <!-- 1 COVER -->
+    <section class="cover active">
+      <p class="ce">Stakeholder Overview</p>
+      <h1>Tribeca Task Tool</h1>
+      <p class="sub">A plain-English instruction becomes a real Google Calendar event and email — and the assignee's reply comes back to the task automatically.</p>
+      <div class="meta"><span>Assessment build</span><span class="dot"></span><span>June 2026</span></div>
+      <div class="rule">How it works&nbsp;&nbsp;·&nbsp;&nbsp;Where the data lives&nbsp;&nbsp;·&nbsp;&nbsp;Why each piece exists&nbsp;&nbsp;·&nbsp;&nbsp;What production needs</div>
+    </section>
+
+    <!-- 2 WHAT IT DOES -->
+    <section class="slide">
+      <div class="band"><p class="eyebrow">The idea in one line</p><h2>From a sentence to a scheduled, tracked task</h2></div>
+      <div class="body">
+        <p class="lead">Someone types a request the way they would say it out loud. The tool understands it, lets them confirm the details, then makes it real — and keeps track of the response.</p>
+        <p class="spine" style="margin-bottom:26px;">Type <span>›</span> Understand <span>›</span> Confirm <span>›</span> Notify <span>›</span> Reply <span>›</span> Track</p>
+        <div class="grid2">
+          <div><p class="colhead">What a person does</p>
+            <ul class="clean">
+              <li>Types the request in plain English</li>
+              <li>Reviews and edits the parsed details</li>
+              <li>Clicks approve</li>
+            </ul>
+          </div>
+          <div><p class="colhead">What the tool does</p>
+            <ul class="clean muted">
+              <li>Reads the request into tidy fields</li>
+              <li>Books the calendar and sends the email</li>
+              <li>Captures the reply against the task</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div style="padding:0 56px;"><div class="foot"><span>Tribeca Task Tool — Stakeholder Overview</span><span class="pg">02 / 15</span></div></div>
+    </section>
+
+    <!-- 3 JOURNEY -->
+    <section class="slide">
+      <div class="band"><p class="eyebrow">End to end</p><h2>The journey of one instruction</h2></div>
+      <div class="body">
+        <div class="flow">
+          <div class="step"><div class="num">1</div><div><h3>Type</h3><p>A person writes: “Meet Darshak tomorrow 6 PM, it’s urgent.”</p></div></div>
+          <div class="step"><div class="num">2</div><div><h3>Understand</h3><p>The AI turns the sentence into who, what, when, and priority.</p></div></div>
+          <div class="step"><div class="num">3</div><div><h3>Confirm</h3><p>The person reviews and edits the details, then approves.</p></div></div>
+          <div class="step"><div class="num">4</div><div><h3>Notify</h3><p>A calendar invite and an email are sent to the assignee.</p></div></div>
+          <div class="step"><div class="num">5</div><div><h3>Reply</h3><p>The assignee simply replies to that email.</p></div></div>
+          <div class="step"><div class="num">6</div><div><h3>Track</h3><p>The reply appears on the task and the status updates.</p></div></div>
+        </div>
+      </div>
+      <div style="padding:0 56px;"><div class="foot"><span>Tribeca Task Tool — Stakeholder Overview</span><span class="pg">03 / 15</span></div></div>
+    </section>
+
+    <!-- 4 THREE BUILDING BLOCKS -->
+    <section class="slide">
+      <div class="band"><p class="eyebrow">The moving parts, in plain terms</p><h2>Three building blocks</h2></div>
+      <div class="body">
+        <div class="cards c3">
+          <div class="card"><h3>The front desk</h3><p><b style="color:#2B3036;">The web page.</b> Where a person types the request and confirms the details. Nothing to install — it opens in a browser.</p></div>
+          <div class="card"><h3>The back office</h3><p><b style="color:#2B3036;">Supabase.</b> The secure records room plus a few quick-acting clerks. It understands the request, keeps the master record, and decides what happens next.</p></div>
+          <div class="card"><h3>The operations runner</h3><p><b style="color:#2B3036;">n8n.</b> The assistant that actually books Google Calendar, sends the email, and watches the inbox for replies.</p></div>
+        </div>
+        <p class="note" style="margin-top:26px;">Each piece has one clear job. That separation is what keeps the tool dependable and easy to change.</p>
+      </div>
+      <div style="padding:0 56px;"><div class="foot"><span>Tribeca Task Tool — Stakeholder Overview</span><span class="pg">04 / 15</span></div></div>
+    </section>
+
+    <!-- 5 WHERE DATA LIVES -->
+    <section class="slide">
+      <div class="band"><p class="eyebrow">Where the data lives</p><h2>One secure record per task, kept in the back office</h2></div>
+      <div class="body">
+        <p class="lead">Every task is stored in the back-office database (Supabase). One master record exists from the moment a task is created and is updated as things happen.</p>
+        <div class="grid2">
+          <div><p class="colhead">Each task record holds</p>
+            <ul class="clean">
+              <li>Title, assignee name and email</li>
+              <li>Date, time and priority; any notes</li>
+              <li>A unique reference number</li>
+              <li>Status, the calendar link, and every reply</li>
+            </ul>
+          </div>
+          <div><p class="colhead">Why one record matters</p>
+            <ul class="clean muted">
+              <li>A single source of truth — no copies drifting apart</li>
+              <li>The reference number ties the email, the reply and the task together</li>
+              <li>Nothing is duplicated or lost along the way</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div style="padding:0 56px;"><div class="foot"><span>Tribeca Task Tool — Stakeholder Overview</span><span class="pg">05 / 15</span></div></div>
+    </section>
+
+    <!-- 6 AI PARSE -->
+    <section class="slide">
+      <div class="band"><p class="eyebrow">Where the AI does its work</p><h2>A smart reader turns a sentence into tidy fields</h2></div>
+      <div class="body">
+        <p class="lead">The understanding step runs in the back office. It reads free-form text and fills in the form — so a person can check it before anything is sent.</p>
+        <div class="ex">
+          <div class="in"><p class="tag">What the person types</p><p class="q">“Meet Darshak tomorrow 6 PM, it’s urgent — he should finish the assessment.”</p></div>
+          <div class="out"><p class="tag">What the tool fills in</p>
+            <div class="kvp">
+              <b>Type</b><span>Calendar event</span>
+              <b>Title</b><span>Meeting with Darshak</span>
+              <b>When</b><span>28 Jun 2026, 6:00 PM IST</span>
+              <b>Priority</b><span>High</span>
+              <b>Notes</b><span>Finish the assessment</span>
+            </div>
+          </div>
+        </div>
+        <p class="note" style="margin-top:22px;">The person always sees this and can correct anything before approving.</p>
+      </div>
+      <div style="padding:0 56px;"><div class="foot"><span>Tribeca Task Tool — Stakeholder Overview</span><span class="pg">06 / 15</span></div></div>
+    </section>
+
+    <!-- 7 WHY SUPABASE NOT N8N -->
+    <section class="slide">
+      <div class="band"><p class="eyebrow">A deliberate design choice</p><h2>Why the understanding step lives in the back office, not the automation</h2></div>
+      <div class="body">
+        <div class="cards c2">
+          <div class="rcard"><div class="num">1</div><div><h3>A person checks it first</h3><p>Understanding happens up front, so the details can be reviewed and edited on screen — not buried inside the step that does the sending.</p></div></div>
+          <div class="rcard"><div class="num">2</div><div><h3>One master record</h3><p>The back office owns the task and its reference number from the start; the AI’s reading is saved straight into that same record.</p></div></div>
+          <div class="rcard"><div class="num">3</div><div><h3>Right tool for each job</h3><p>The back office is the brain and memory; the runner is the hands. Keeping thinking separate from doing makes both easier to trust and change.</p></div></div>
+          <div class="rcard"><div class="num">4</div><div><h3>The key stays locked away</h3><p>The AI service key lives in the back office — never in the browser, and never spread across the automation tool.</p></div></div>
+        </div>
+      </div>
+      <div style="padding:0 56px;"><div class="foot"><span>Tribeca Task Tool — Stakeholder Overview</span><span class="pg">07 / 15</span></div></div>
+    </section>
+
+    <!-- 8 WHAT N8N DOES -->
+    <section class="slide">
+      <div class="band"><p class="eyebrow">The operations runner</p><h2>n8n is the bridge to Google</h2></div>
+      <div class="body">
+        <p class="lead">n8n connects applications without custom code. It securely holds the Google sign-in and performs the real-world actions on the tool’s behalf.</p>
+        <div class="grid2">
+          <div><p class="colhead">What it does</p>
+            <ul class="clean">
+              <li>Creates the calendar event and sends the invite (Accept / Maybe / Decline)</li>
+              <li>Sends the email to the assignee with reply instructions</li>
+              <li>Watches the shared inbox (about once a minute) for replies</li>
+              <li>Hands each cleaned reply back to the back office</li>
+            </ul>
+          </div>
+          <div><p class="colhead">Why this tool</p>
+            <ul class="clean muted">
+              <li>Reliable, visual, and quick to change as needs evolve</li>
+              <li>No custom code to maintain for each connection</li>
+              <li>Keeps Google access in one controlled place</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div style="padding:0 56px;"><div class="foot"><span>Tribeca Task Tool — Stakeholder Overview</span><span class="pg">08 / 15</span></div></div>
+    </section>
+
+    <!-- 9 OUTBOUND -->
+    <section class="slide">
+      <div class="band"><p class="eyebrow">How the parts talk — sending</p><h2>Creating a task and notifying the assignee</h2></div>
+      <div class="body">
+        <div class="pipe">
+          <div class="pbox"><div class="pt">Front desk</div><div class="ps">person approves</div></div>
+          <div class="arrow">›</div>
+          <div class="pbox"><div class="pt">Back office</div><div class="ps">saves &amp; coordinates</div></div>
+          <div class="arrow">›</div>
+          <div class="pbox"><div class="pt">n8n</div><div class="ps">performs actions</div></div>
+          <div class="arrow">›</div>
+          <div class="pbox"><div class="pt">Google</div><div class="ps">Calendar + Gmail</div></div>
+        </div>
+        <div class="grid2">
+          <ul class="clean">
+            <li>The person approves the task on the front desk</li>
+            <li>The back office saves it and asks n8n to act</li>
+          </ul>
+          <ul class="clean muted">
+            <li>n8n creates the event and sends the email through Google</li>
+            <li>The back office records the result; the front desk shows “notified”</li>
+          </ul>
+        </div>
+        <p class="note" style="margin-top:18px;">The front desk never talks to Google or n8n directly — the back office coordinates everything.</p>
+      </div>
+      <div style="padding:0 56px;"><div class="foot"><span>Tribeca Task Tool — Stakeholder Overview</span><span class="pg">09 / 15</span></div></div>
+    </section>
+
+    <!-- 10 INBOUND -->
+    <section class="slide">
+      <div class="band"><p class="eyebrow">How the parts talk — replies</p><h2>Bringing the reply back to the task</h2></div>
+      <div class="body">
+        <div class="pipe">
+          <div class="pbox"><div class="pt">Assignee</div><div class="ps">replies to email</div></div>
+          <div class="arrow">›</div>
+          <div class="pbox"><div class="pt">Google inbox</div><div class="ps">receives reply</div></div>
+          <div class="arrow">›</div>
+          <div class="pbox"><div class="pt">n8n</div><div class="ps">checks ~1 min</div></div>
+          <div class="arrow">›</div>
+          <div class="pbox"><div class="pt">Back office</div><div class="ps">attaches to task</div></div>
+        </div>
+        <div class="grid2">
+          <ul class="clean">
+            <li>The assignee simply replies to the email</li>
+            <li>n8n spots the reply by its reference tag and cleans it up</li>
+          </ul>
+          <ul class="clean muted">
+            <li>n8n hands it to the back office, which files it on the right task</li>
+            <li>The reply appears on the dashboard; status becomes “Reply received”</li>
+          </ul>
+        </div>
+        <p class="note" style="margin-top:18px;">The reference tag in the subject line is how a reply finds its way back to the exact task.</p>
+      </div>
+      <div style="padding:0 56px;"><div class="foot"><span>Tribeca Task Tool — Stakeholder Overview</span><span class="pg">10 / 15</span></div></div>
+    </section>
+
+    <!-- 11 WHAT WORKS TODAY -->
+    <section class="slide">
+      <div class="band"><p class="eyebrow">Assessment scope</p><h2>What works today</h2></div>
+      <div class="body">
+        <div class="grid2">
+          <ul class="clean">
+            <li>Plain-English understanding with a confirm-and-edit screen</li>
+            <li>Real Google Calendar event and invite with RSVP</li>
+            <li>Real email to the assignee, with reply instructions</li>
+            <li>Replies captured automatically and shown as a thread</li>
+          </ul>
+          <ul class="clean">
+            <li>Known contacts resolved to their real email address</li>
+            <li>Dashboard with search, autocomplete and filters</li>
+            <li>Clean, mobile-friendly interface</li>
+            <li>Times shown in IST for clarity</li>
+          </ul>
+        </div>
+      </div>
+      <div style="padding:0 56px;"><div class="foot"><span>Tribeca Task Tool — Stakeholder Overview</span><span class="pg">11 / 15</span></div></div>
+    </section>
+
+    <!-- 12 TRANSITION -->
+    <section class="slide">
+      <div class="band"><p class="eyebrow">Important</p><h2>This is an assessment build — not yet production-ready</h2></div>
+      <div class="body">
+        <p class="lead">It proves the full idea end to end. Before rolling it out across the organization, several essentials are needed. None are exotic — each closes a real, practical gap.</p>
+        <div class="cards c3">
+          <div class="card"><h3>Access &amp; identity</h3><p>Make sure only the right people can use it and see the data.</p></div>
+          <div class="card"><h3>Trustworthy data</h3><p>Pick real employees with no ambiguity about who is meant.</p></div>
+          <div class="card"><h3>Guardrails &amp; operations</h3><p>Prevent obvious mistakes and run it dependably day to day.</p></div>
+        </div>
+      </div>
+      <div style="padding:0 56px;"><div class="foot"><span>Tribeca Task Tool — Stakeholder Overview</span><span class="pg">12 / 15</span></div></div>
+    </section>
+
+    <!-- 13 PRODUCTION 1 -->
+    <section class="slide">
+      <div class="band"><p class="eyebrow">From assessment to production — 1 of 2</p><h2>Access and trustworthy data</h2></div>
+      <div class="body">
+        <div class="cards c2">
+          <div class="card"><h3>Sign-in / login</h3><p>Only authorized staff can create tasks or view data. Today, anyone with the link can.</p></div>
+          <div class="card"><h3>Employee directory (name + email)</h3><p>Pick real people from a list — no typing addresses and no guessing who is meant.</p></div>
+          <div class="card"><h3>Company database with name de-duplication</h3><p>Two “Kalpesh” or “Darshak”? Tell them apart so the right person is always notified.</p></div>
+          <div class="card"><h3>Edit a created task</h3><p>Fix a time or detail and re-notify the assignee, without starting over.</p></div>
+        </div>
+      </div>
+      <div style="padding:0 56px;"><div class="foot"><span>Tribeca Task Tool — Stakeholder Overview</span><span class="pg">13 / 15</span></div></div>
+    </section>
+
+    <!-- 14 PRODUCTION 2 -->
+    <section class="slide">
+      <div class="band"><p class="eyebrow">From assessment to production — 2 of 2</p><h2>Guardrails and operations</h2></div>
+      <div class="body">
+        <div class="cards c2">
+          <div class="card"><h3>Calendar conflict warning</h3><p>Flag it upfront when a slot clashes with an existing meeting — for example, 4 PM is already booked.</p></div>
+          <div class="card"><h3>No scheduling in the past</h3><p>Block a 1 PM meeting when it is already 4 PM, so simple slips are caught before sending.</p></div>
+          <div class="card"><h3>Private code &amp; proper hosting</h3><p>Keep the source code private and host the app on Vercel with a clean domain and dependable uptime.</p></div>
+          <div class="card"><h3>Operational essentials</h3><p>Activity / audit log, delivery and failure alerts, role-based permissions, and multi-time-zone support.</p></div>
+        </div>
+      </div>
+      <div style="padding:0 56px;"><div class="foot"><span>Tribeca Task Tool — Stakeholder Overview</span><span class="pg">14 / 15</span></div></div>
+    </section>
+
+    <!-- 15 SUMMARY -->
+    <section class="slide">
+      <div class="band"><p class="eyebrow">Summary</p><h2>Recommended path forward</h2></div>
+      <div class="body">
+        <div class="grid2">
+          <div><p class="colhead">Where we are</p>
+            <p class="lead" style="font-size:16px;">The complete spine works today — understand, confirm, notify, and track — proving the concept end to end with real calendar events, emails, and replies.</p>
+          </div>
+          <div><p class="colhead">Suggested order for production</p>
+            <div class="flow" style="grid-template-columns:1fr;gap:12px;">
+              <div class="step"><div class="num" style="width:30px;height:30px;font-size:14px;">1</div><div><h3 style="font-size:14.5px;">Sign-in + employee directory with de-duplication</h3></div></div>
+              <div class="step"><div class="num" style="width:30px;height:30px;font-size:14px;">2</div><div><h3 style="font-size:14.5px;">Calendar guardrails — conflict and no past times</h3></div></div>
+              <div class="step"><div class="num" style="width:30px;height:30px;font-size:14px;">3</div><div><h3 style="font-size:14.5px;">Edit a created task</h3></div></div>
+              <div class="step"><div class="num" style="width:30px;height:30px;font-size:14px;">4</div><div><h3 style="font-size:14.5px;">Private repository + Vercel hosting</h3></div></div>
+              <div class="step"><div class="num" style="width:30px;height:30px;font-size:14px;">5</div><div><h3 style="font-size:14.5px;">Audit log, alerts and permissions</h3></div></div>
+            </div>
+          </div>
+        </div>
+        <p class="note" style="margin-top:20px;">A short, staged rollout turns this proven prototype into a dependable everyday tool.</p>
+      </div>
+      <div style="padding:0 56px;"><div class="foot"><span>Tribeca Task Tool — Stakeholder Overview</span><span class="pg">15 / 15</span></div></div>
+    </section>
+
+  </div>
+</div>
+
+<div class="nav" role="navigation" aria-label="Slide navigation">
+  <button id="prev" aria-label="Previous slide">‹ Prev</button>
+  <span class="ct" id="counter">1 / 15</span>
+  <button id="next" aria-label="Next slide">Next ›</button>
+  <span class="sep"></span>
+  <button id="printBtn" aria-label="Print or save as PDF">Print / PDF</button>
+</div>
+
+<script>
+  (function(){
+    var slides = Array.prototype.slice.call(document.querySelectorAll('#stage .slide, #stage .cover'));
+    var i = 0;
+    var counter = document.getElementById('counter');
+    function show(n){
+      i = Math.max(0, Math.min(slides.length-1, n));
+      slides.forEach(function(s,idx){ s.classList.toggle('active', idx===i); });
+      counter.textContent = (i+1) + ' / ' + slides.length;
+    }
+    function fit(){
+      var stage = document.getElementById('stage');
+      var s = Math.min(window.innerWidth/1280, window.innerHeight/720);
+      stage.style.transform = 'scale(' + s + ')';
+    }
+    document.getElementById('next').addEventListener('click', function(){ show(i+1); });
+    document.getElementById('prev').addEventListener('click', function(){ show(i-1); });
+    document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
+    document.addEventListener('keydown', function(e){
+      if(e.key==='ArrowRight' || e.key===' '|| e.key==='PageDown'){ show(i+1); e.preventDefault(); }
+      else if(e.key==='ArrowLeft' || e.key==='PageUp'){ show(i-1); e.preventDefault(); }
+      else if(e.key==='Home'){ show(0); } else if(e.key==='End'){ show(slides.length-1); }
+    });
+    window.addEventListener('resize', fit);
+    fit(); show(0);
+  })();
+</script>
