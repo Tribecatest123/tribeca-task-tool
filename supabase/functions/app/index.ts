@@ -120,7 +120,8 @@ const html = `<!DOCTYPE html>
       <h2>Tasks</h2>
       <div class="body">
         <div class="filters">
-          <input id="f_search" type="text" placeholder="Search title or assignee" oninput="renderTasks()" />
+          <input id="f_search" type="text" list="taskSuggest" autocomplete="off" placeholder="Search by title or assignee" oninput="renderTasks()" />
+          <datalist id="taskSuggest"></datalist>
           <select id="f_type" onchange="renderTasks()"><option value="">All types</option></select>
           <select id="f_status" onchange="renderTasks()"><option value="">All statuses</option></select>
           <button class="btn secondary" onclick="loadTasks()">Refresh</button>
@@ -245,6 +246,13 @@ const html = `<!DOCTYPE html>
     const statuses = Array.from(new Set(ALL_TASKS.map(function(t){return t.status;}).filter(Boolean))).sort();
     fillSelect("f_type", types, "All types");
     fillSelect("f_status", statuses, "All statuses");
+
+    // Autocomplete suggestions for the search box: titles first, then assignee names.
+    const titles = Array.from(new Set(ALL_TASKS.map(function(t){return t.title;}).filter(Boolean)));
+    const names = Array.from(new Set(ALL_TASKS.map(function(t){return t.assignee_name;}).filter(Boolean)));
+    document.getElementById("taskSuggest").innerHTML =
+      titles.concat(names).map(function(v){ return '<option value="'+esc(v)+'"></option>'; }).join("");
+
     renderTasks();
   }
 
