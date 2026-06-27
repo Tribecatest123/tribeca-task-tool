@@ -15,24 +15,36 @@ The backend and frontend run on Supabase (Postgres + Edge Functions). Base:
 
 | Surface | URL |
 |---|---|
-| App (frontend) | `https://vgeriftinzhuoivfavdp.supabase.co/functions/v1/app` |
+| **App (frontend)** | **`https://tribecatest123.github.io/tribeca-task-tool/`** |
 | POST /parse | `.../functions/v1/parse` |
 | POST /approve | `.../functions/v1/approve` |
 | POST /inbound (public, n8n -> app) | `.../functions/v1/inbound` |
 | GET /tasks, GET /tasks?id= | `.../functions/v1/tasks` |
 
+The API base for all four endpoints is `https://vgeriftinzhuoivfavdp.supabase.co/functions/v1`.
+
+### Frontend hosting (why it is not served from Supabase)
+
+`*.supabase.co` sandboxes any HTML it serves: **both** Edge Function responses **and** Storage
+public objects come back with `Content-Type: text/plain`, `X-Content-Type-Options: nosniff`, and
+`Content-Security-Policy: default-src 'none'; sandbox` — an anti-abuse measure that prevents the
+domain from hosting renderable web pages. A browser pointed at `.../functions/v1/app` (or a public
+Storage URL) therefore shows the raw source, not the rendered app, regardless of any `apikey`.
+
+So the single-page frontend is hosted on **GitHub Pages** from [`docs/index.html`](docs/index.html)
+(`main` branch, `/docs`) — a normal static host that serves real `text/html`. The page points its
+API base at the absolute functions URL and calls the endpoints cross-origin (the functions set
+`Access-Control-Allow-Origin: *`). The `app` Edge Function is retained as the canonical source of
+the page markup, but is not the browser entry point.
+
 ### API key on requests (anon header)
 
-Supabase routes `/functions/v1/*` through a gateway that, depending on project config, may
-require an `apikey` (or `Authorization`) header. To be robust either way, the frontend sends the
-**public anon key** on every call (`apikey: <anon>` and `Authorization: Bearer <anon>`), and the
-n8n inbound `POST to /inbound` node sends the same. The anon key is **public by design** and safe
-to embed in frontend JS and the workflow JSON. The **service_role** key is never exposed to the
-browser — only the edge functions use it (injected automatically by Supabase).
-
-A plain browser GET of `.../functions/v1/app` renders the page directly (the `app` function is
-deployed `verify_jwt = false`), so no separate static host is needed; the page is served by the
-edge function as-is.
+The frontend sends the **public anon key** on every call (`apikey: <anon>` and
+`Authorization: Bearer <anon>`), and the n8n inbound `POST to /inbound` node sends the same, so the
+requests always carry a key the gateway accepts. The anon key is **public by design** and safe to
+embed in frontend JS and the workflow JSON. The **service_role** key is never exposed to the
+browser — only the edge functions use it (injected automatically by Supabase). (Function responses
+are JSON consumed by `fetch`, so the sandbox content-type above does not affect them.)
 
 ## Deviations from the brief (stated honestly)
 
@@ -184,6 +196,8 @@ n8n/
   outbound_workflow.json
   inbound_workflow.json
   SETUP.md
+docs/
+  index.html        # GitHub Pages frontend (absolute API base + anon headers)
 .env.example
 README.md
 ```
