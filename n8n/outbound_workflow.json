@@ -49,7 +49,9 @@
         "end": "={{ $json.body.datetime_end }}",
         "additionalFields": {
           "summary": "={{ $json.body.title }}",
-          "description": "={{ $json.body.notes }}"
+          "description": "={{ $json.body.notes }}",
+          "attendees": ["={{ $json.body.assignee_email }}"],
+          "sendUpdates": "all"
         }
       },
       "id": "33333333-3333-3333-3333-333333333333",
@@ -64,9 +66,9 @@
       "parameters": {
         "sendTo": "={{ $node[\"Webhook\"].json.body.assignee_email }}",
         "subject": "=[Tribeca Task #{{ $node[\"Webhook\"].json.body.task_id }}] {{ $node[\"Webhook\"].json.body.title }}",
-        "emailType": "text",
-        "message": "=Hi {{ $node[\"Webhook\"].json.body.assignee_name }},\n\nYou have a scheduled event: {{ $node[\"Webhook\"].json.body.title }}\nWhen: {{ $node[\"Webhook\"].json.body.datetime_start }} ({{ $node[\"Webhook\"].json.body.timezone }})\nPriority: {{ $node[\"Webhook\"].json.body.priority }}\n{{ $node[\"Webhook\"].json.body.notes }}\n\nReply to this email with any update — your reply will be recorded against this task.",
-        "options": {}
+        "emailType": "html",
+        "message": "=<p>Hi <b>{{ $node[\"Webhook\"].json.body.assignee_name }}</b>,</p>\n<p>You have a new scheduled event:</p>\n<table cellpadding=\"6\" style=\"border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:14px\">\n<tr><td style=\"font-weight:bold;vertical-align:top\">Event</td><td>{{ $node[\"Webhook\"].json.body.title }}</td></tr>\n<tr><td style=\"font-weight:bold;vertical-align:top\">When</td><td>{{ DateTime.fromISO($node[\"Webhook\"].json.body.datetime_start).setZone('Asia/Kolkata').toFormat('cccc, dd LLL yyyy, h:mm a') }} IST</td></tr>\n<tr><td style=\"font-weight:bold;vertical-align:top\">Priority</td><td>{{ $node[\"Webhook\"].json.body.priority.toUpperCase() }}</td></tr>\n<tr><td style=\"font-weight:bold;vertical-align:top\">Notes</td><td>{{ $node[\"Webhook\"].json.body.notes }}</td></tr>\n</table>\n<p>Reply to this email with any update — your reply will be recorded against this task.</p>\n<p style=\"color:#888888;font-size:12px\">This task was created with the Tribeca Task Tool.</p>",
+        "options": { "appendAttribution": false }
       },
       "id": "44444444-4444-4444-4444-444444444444",
       "name": "Send Email (Calendar)",
@@ -92,9 +94,9 @@
       "parameters": {
         "sendTo": "={{ $json.body.assignee_email }}",
         "subject": "=[Tribeca Task #{{ $json.body.task_id }}] {{ $json.body.title }}",
-        "emailType": "text",
-        "message": "=Hi {{ $json.body.assignee_name }},\n\nReminder: {{ $json.body.title }}\nDue: {{ $json.body.datetime_start }} ({{ $json.body.timezone }})\nPriority: {{ $json.body.priority }}\n{{ $json.body.notes }}\n\nReply to this email with any update — your reply will be recorded against this task.",
-        "options": {}
+        "emailType": "html",
+        "message": "=<p>Hi <b>{{ $json.body.assignee_name }}</b>,</p>\n<p>This is a reminder:</p>\n<table cellpadding=\"6\" style=\"border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:14px\">\n<tr><td style=\"font-weight:bold;vertical-align:top\">Task</td><td>{{ $json.body.title }}</td></tr>\n<tr><td style=\"font-weight:bold;vertical-align:top\">Due</td><td>{{ DateTime.fromISO($json.body.datetime_start).setZone('Asia/Kolkata').toFormat('cccc, dd LLL yyyy, h:mm a') }} IST</td></tr>\n<tr><td style=\"font-weight:bold;vertical-align:top\">Priority</td><td>{{ $json.body.priority.toUpperCase() }}</td></tr>\n<tr><td style=\"font-weight:bold;vertical-align:top\">Notes</td><td>{{ $json.body.notes }}</td></tr>\n</table>\n<p>Reply to this email with any update — your reply will be recorded against this task.</p>\n<p style=\"color:#888888;font-size:12px\">This task was created with the Tribeca Task Tool.</p>",
+        "options": { "appendAttribution": false }
       },
       "id": "66666666-6666-6666-6666-666666666666",
       "name": "Send Email (Reminder)",
