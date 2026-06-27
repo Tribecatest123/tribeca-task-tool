@@ -62,10 +62,10 @@
     },
     {
       "parameters": {
-        "sendTo": "={{ $json.body.assignee_email }}",
-        "subject": "=[Tribeca Task #{{ $json.body.task_id }}] {{ $json.body.title }}",
+        "sendTo": "={{ $node[\"Webhook\"].json.body.assignee_email }}",
+        "subject": "=[Tribeca Task #{{ $node[\"Webhook\"].json.body.task_id }}] {{ $node[\"Webhook\"].json.body.title }}",
         "emailType": "text",
-        "message": "=Hi {{ $json.body.assignee_name }},\n\nYou have a scheduled event: {{ $json.body.title }}\nWhen: {{ $json.body.datetime_start }} ({{ $json.body.timezone }})\nPriority: {{ $json.body.priority }}\n{{ $json.body.notes }}\n\nReply to this email with any update — your reply will be recorded against this task.",
+        "message": "=Hi {{ $node[\"Webhook\"].json.body.assignee_name }},\n\nYou have a scheduled event: {{ $node[\"Webhook\"].json.body.title }}\nWhen: {{ $node[\"Webhook\"].json.body.datetime_start }} ({{ $node[\"Webhook\"].json.body.timezone }})\nPriority: {{ $node[\"Webhook\"].json.body.priority }}\n{{ $node[\"Webhook\"].json.body.notes }}\n\nReply to this email with any update — your reply will be recorded against this task.",
         "options": {}
       },
       "id": "44444444-4444-4444-4444-444444444444",
