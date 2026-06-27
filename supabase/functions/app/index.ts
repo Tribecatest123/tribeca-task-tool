@@ -67,6 +67,7 @@ const html = `<!DOCTYPE html>
         <textarea id="instruction" placeholder="e.g. Schedule a 30-min interview with Priya Sharma (priya.test@example.com) next Wednesday 3pm"></textarea>
         <button class="btn" id="parseBtn" onclick="parse()">Parse</button>
         <div id="parseErr"></div>
+        <div id="newMsg"></div>
       </div>
     </div>
 
@@ -132,6 +133,7 @@ const html = `<!DOCTYPE html>
   async function parse() {
     const btn = document.getElementById("parseBtn");
     const err = document.getElementById("parseErr"); err.innerHTML = "";
+    document.getElementById("newMsg").innerHTML = "";
     const text = document.getElementById("instruction").value.trim();
     if (!text) return;
     btn.disabled = true; btn.textContent = "Parsing...";
@@ -169,8 +171,15 @@ const html = `<!DOCTYPE html>
       const r = await fetch(FN + "/approve", { method:"POST", headers: HDRS, body: JSON.stringify(payload) });
       const d = await r.json();
       const link = d.calendar_event_link ? '<br>Calendar: <a href="'+d.calendar_event_link+'" target="_blank">open event</a>' : "";
-      const warn = d.error ? '<br><span class="muted">Note: '+d.error+'</span>' : "";
-      out.innerHTML = '<div class="err">Task <b>'+d.task_id+'</b> &mdash; status: <b>'+d.status+'</b>'+link+warn+'</div>';
+      if (d.status === "notified") {
+        // Success: collapse the confirm card and reset the form so a finished task doesn't linger.
+        document.getElementById("confirmCard").classList.add("hidden");
+        document.getElementById("instruction").value = "";
+        document.getElementById("newMsg").innerHTML = '<div class="err">Task <b>'+esc(d.task_id)+'</b> created &mdash; assignee notified.'+link+'</div>';
+      } else {
+        const warn = d.error ? '<br><span class="muted">Note: '+d.error+'</span>' : "";
+        out.innerHTML = '<div class="err">Task <b>'+esc(d.task_id)+'</b> &mdash; status: <b>'+esc(d.status)+'</b>'+warn+'</div>';
+      }
     } catch (e) {
       out.innerHTML = '<div class="err">Approve failed: ' + e.message + "</div>";
     } finally { btn.disabled = false; btn.textContent = "Approve & Notify"; }
