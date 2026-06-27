@@ -21,6 +21,19 @@ The backend and frontend run on Supabase (Postgres + Edge Functions). Base:
 | POST /inbound (public, n8n -> app) | `.../functions/v1/inbound` |
 | GET /tasks, GET /tasks?id= | `.../functions/v1/tasks` |
 
+### API key on requests (anon header)
+
+Supabase routes `/functions/v1/*` through a gateway that, depending on project config, may
+require an `apikey` (or `Authorization`) header. To be robust either way, the frontend sends the
+**public anon key** on every call (`apikey: <anon>` and `Authorization: Bearer <anon>`), and the
+n8n inbound `POST to /inbound` node sends the same. The anon key is **public by design** and safe
+to embed in frontend JS and the workflow JSON. The **service_role** key is never exposed to the
+browser — only the edge functions use it (injected automatically by Supabase).
+
+A plain browser GET of `.../functions/v1/app` renders the page directly (the `app` function is
+deployed `verify_jwt = false`), so no separate static host is needed; the page is served by the
+edge function as-is.
+
 ## Deviations from the brief (stated honestly)
 
 1. **OpenAI instead of Claude for parsing.** The brief says "Claude parses it." Only an OpenAI
@@ -40,11 +53,16 @@ is **sent** (not drafted), reply detection uses the n8n **Gmail Trigger (polling
 
 ## Architecture
 
-- **Postgres** — one table, `public.tt_tasks`, owns the canonical `task_id`. Namespaced `tt_*`
-  because this Supabase project also hosts an unrelated app.
+- **Postgres** — `public.tt_tasks` owns the canonical `task_id`; `public.tt_contacts` maps a
+  lowercased first name (`name_key`) to a real `full_name` + `email` for the parse override;
+  `public.tt_config` holds private key/value secrets. Namespaced `tt_*` because this Supabase
+  project also hosts an unrelated app.
 - **Edge functions** (Deno), all deployed with `verify_jwt = false` because the brief requires no
   auth and both the browser and n8n must reach them without a token:
-  - `parse` — calls OpenAI, returns structured fields, **does not save**.
+  - `parse` — calls OpenAI, returns structured fields, **does not save**. After the model
+    returns, it looks up the first token of `assignee_name` in `tt_contacts`; on a match the
+    real `full_name` + `email` **override** the model output (so known assignees get a
+    deliverable address instead of a fabricated `@example.com`).
   - `approve` — generates `task_id`, saves the task, POSTs payload (6a) to the n8n outbound
     webhook, stores the returned status + calendar link (6b). Status -> `Notified`.
   - `inbound` — receives the cleaned reply (6c), attaches it to the matching task. Status ->
@@ -112,12 +130,14 @@ is set the same way once the outbound workflow is activated and its production U
 Import `n8n/outbound_workflow.json` and `n8n/inbound_workflow.json` into your n8n instance.
 
 ### 3. Manual steps after import (credentials/URLs are stripped on export — these do NOT import)
+The full numbered, human-operated runbook is in [`n8n/SETUP.md`](n8n/SETUP.md). In short:
 1. Re-attach the **Google OAuth credential** to: `Create Calendar Event`, both `Send Email`
    nodes (outbound), and the `Gmail Trigger` node (inbound).
 2. In the outbound workflow, **activate** it, then open the `Webhook` node and copy its
    **Production URL**. Paste that into the `N8N_OUTBOUND_WEBHOOK_URL` Supabase secret (step 1).
 3. The inbound workflow's `POST to /inbound` node is **already pre-filled** with the deployed
-   `/inbound` URL. Change it only if you redeploy the app elsewhere.
+   `/inbound` URL **and the `apikey` / `Authorization` anon headers**. Change them only if you
+   redeploy the app elsewhere.
 4. **Activate both workflows.**
 
 ### 4. Use it
@@ -158,9 +178,12 @@ account; within ~1 minute the reply appears on the task's detail view with statu
 supabase/
   functions/{parse,approve,inbound,tasks,app}/index.ts
   migrations/0001_create_tt_tasks.sql
+  migrations/0002_create_tt_config.sql
+  migrations/0003_create_tt_contacts.sql
 n8n/
   outbound_workflow.json
   inbound_workflow.json
+  SETUP.md
 .env.example
 README.md
 ```

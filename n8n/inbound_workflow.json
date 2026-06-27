@@ -51,6 +51,14 @@
       "parameters": {
         "method": "POST",
         "url": "https://vgeriftinzhuoivfavdp.supabase.co/functions/v1/inbound",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZnZXJpZnRpbnpodW9pdmZhdmRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODY2NDYsImV4cCI6MjA5NzE2MjY0Nn0.QGhVwQoFndyU6A_HKyMSj8rOSu1pGIRyZJt_DyAmLTs" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZnZXJpZnRpbnpodW9pdmZhdmRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODY2NDYsImV4cCI6MjA5NzE2MjY0Nn0.QGhVwQoFndyU6A_HKyMSj8rOSu1pGIRyZJt_DyAmLTs" }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}",

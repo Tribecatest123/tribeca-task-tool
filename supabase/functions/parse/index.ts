@@ -118,5 +118,24 @@ Deno.serve(async (req) => {
   }
   parsed.timezone = TZ;
 
+  // Contacts override: the model fabricates a "<name>@example.com" address when none is
+  // typed, which never delivers. Look up the first token of assignee_name in tt_contacts
+  // (case-insensitive). On match, the real full_name + email WIN over the model output.
+  // On no match, keep the model output (still fabricated for unknown names — acceptable here).
+  try {
+    const firstToken = String(parsed.assignee_name || "").trim().split(/\s+/)[0]?.toLowerCase();
+    if (firstToken) {
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: contact } = await sb.from("tt_contacts")
+        .select("full_name,email").eq("name_key", firstToken).maybeSingle();
+      if (contact) {
+        parsed.assignee_name = contact.full_name;
+        parsed.assignee_email = contact.email;
+      }
+    }
+  } catch (_e) {
+    // Best-effort: a lookup failure must not break parsing — keep the model output.
+  }
+
   return new Response(JSON.stringify(parsed), { headers: { ...cors, "Content-Type": "application/json" } });
 });

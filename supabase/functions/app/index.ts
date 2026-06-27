@@ -116,6 +116,11 @@ const html = `<!DOCTYPE html>
 
 <script>
   const FN = location.origin + "/functions/v1";
+  // Public anon key — safe to embed in frontend JS (NEVER the service_role key).
+  // Sent on every call so requests carry an apikey even if the gateway begins to require one.
+  const ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZnZXJpZnRpbnpodW9pdmZhdmRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODY2NDYsImV4cCI6MjA5NzE2MjY0Nn0.QGhVwQoFndyU6A_HKyMSj8rOSu1pGIRyZJt_DyAmLTs";
+  const HDRS = { "Content-Type": "application/json", "apikey": ANON, "Authorization": "Bearer " + ANON };
+  const AUTH = { "apikey": ANON, "Authorization": "Bearer " + ANON };
 
   function show(v) {
     for (const s of ["new","dash","detail"]) document.getElementById("view-"+s).classList.add("hidden");
@@ -131,7 +136,7 @@ const html = `<!DOCTYPE html>
     if (!text) return;
     btn.disabled = true; btn.textContent = "Parsing...";
     try {
-      const r = await fetch(FN + "/parse", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ text }) });
+      const r = await fetch(FN + "/parse", { method:"POST", headers: HDRS, body: JSON.stringify({ text }) });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error + (d.detail ? ": " + d.detail : ""));
       document.getElementById("f_task_type").value = d.task_type || "calendar_event";
@@ -161,7 +166,7 @@ const html = `<!DOCTYPE html>
     };
     btn.disabled = true; btn.textContent = "Sending...";
     try {
-      const r = await fetch(FN + "/approve", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+      const r = await fetch(FN + "/approve", { method:"POST", headers: HDRS, body: JSON.stringify(payload) });
       const d = await r.json();
       const link = d.calendar_event_link ? '<br>Calendar: <a href="'+d.calendar_event_link+'" target="_blank">open event</a>' : "";
       const warn = d.error ? '<br><span class="muted">Note: '+d.error+'</span>' : "";
@@ -177,7 +182,7 @@ const html = `<!DOCTYPE html>
   async function loadTasks() {
     const el = document.getElementById("taskList");
     el.innerHTML = '<p class="muted">Loading...</p>';
-    const r = await fetch(FN + "/tasks");
+    const r = await fetch(FN + "/tasks", { headers: AUTH });
     const d = await r.json();
     const tasks = d.tasks || [];
     if (!tasks.length) { el.innerHTML = '<p class="muted">No tasks yet.</p>'; return; }
@@ -200,7 +205,7 @@ const html = `<!DOCTYPE html>
     show("detail");
     const b = document.getElementById("detailBody");
     b.innerHTML = '<p class="muted">Loading...</p>';
-    const r = await fetch(FN + "/tasks?id=" + encodeURIComponent(id));
+    const r = await fetch(FN + "/tasks?id=" + encodeURIComponent(id), { headers: AUTH });
     const t = await r.json();
     let reply = '<p class="muted">No reply received yet.</p>';
     if (t.reply_text) {
