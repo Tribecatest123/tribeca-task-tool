@@ -17,6 +17,7 @@ The backend and frontend run on Supabase (Postgres + Edge Functions). Base:
 |---|---|
 | **App (frontend)** | **`https://tribecatest123.github.io/tribeca-task-tool/`** |
 | Stakeholder overview (deck) | `https://tribecatest123.github.io/tribeca-task-tool/stakeholder-overview.html` |
+| Architecture & flow (2-page doc) | `https://tribecatest123.github.io/tribeca-task-tool/architecture-flow.html` |
 | POST /parse | `.../functions/v1/parse` |
 | POST /approve | `.../functions/v1/approve` |
 | POST /inbound (public, n8n -> app) | `.../functions/v1/inbound` |
@@ -205,6 +206,7 @@ n8n/
 docs/
   index.html                 # GitHub Pages frontend (absolute API base + anon headers)
   stakeholder-overview.html  # plain-language stakeholder presentation
+  architecture-flow.html     # 2-page end-to-end flow + node/data map
 .env.example
 README.md
 ```

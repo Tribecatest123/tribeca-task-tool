@@ -53,6 +53,12 @@
   .err { border:1px solid var(--line); background:#fff; border-radius:8px; padding:12px; font-size:13.5px; }
   a { color:#111; }
   .hidden { display:none; }
+  .appfoot { margin:6px 2px 30px; padding-top:14px; border-top:1px solid var(--line);
+             display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center; justify-content:center;
+             font-size:12.5px; color:var(--muted); }
+  .appfoot a { color:#2B3036; text-decoration:none; }
+  .appfoot a:hover { text-decoration:underline; }
+  .appfoot .sepdot { color:#c2c6cb; }
   @media (max-width:560px) {
     .grid { grid-template-columns:1fr; }
     .kv { grid-template-columns:1fr; gap:2px 0; }
@@ -135,6 +141,14 @@
       <div class="body"><button class="btn secondary" onclick="show('dash'); loadTasks()">Back to Dashboard</button></div>
     </div>
   </section>
+
+  <footer class="appfoot">
+    <a href="https://tribecatest123.github.io/tribeca-task-tool/stakeholder-overview.html" target="_blank" rel="noopener">Stakeholder deck</a>
+    <span class="sepdot">·</span>
+    <a href="https://tribecatest123.github.io/tribeca-task-tool/architecture-flow.html" target="_blank" rel="noopener">Architecture &amp; flow</a>
+    <span class="sepdot">·</span>
+    <a href="https://github.com/Tribecatest123/tribeca-task-tool" target="_blank" rel="noopener">Source on GitHub</a>
+  </footer>
 </div>
 
 <script>

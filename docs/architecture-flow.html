@@ -1,0 +1,192 @@
+<title>Tribeca Task Tool — Architecture & End-to-End Flow</title>
+<style>
+  :root{
+    --ink:#14171A; --paper:#FFFFFF; --muted:#5B6168; --line:#E2E4E7;
+    --panel:#F4F5F6; --band:#111418; --hair:#D4D7DB;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:#3A3E44;font-family:var(--sans);color:var(--ink);padding:24px 0;}
+  .page{width:794px;min-height:1123px;background:var(--paper);margin:0 auto 24px;
+        padding:30px 50px;position:relative;box-shadow:0 10px 40px rgba(0,0,0,.35);}
+
+  .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 6px;}
+  h1{margin:0 0 5px;font-size:23px;font-weight:800;letter-spacing:-.01em;}
+  .sub{font-size:12.5px;line-height:1.45;color:var(--muted);margin:0 0 13px;max-width:74ch;}
+  h2{font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);font-weight:800;margin:20px 0 10px;}
+
+  /* flow zones */
+  .zone{border:1.5px solid var(--ink);border-radius:11px;overflow:hidden;}
+  .zhead{background:var(--band);color:#fff;padding:7px 14px;display:flex;justify-content:space-between;align-items:baseline;}
+  .zhead .zt{font-size:14px;font-weight:700;}
+  .zhead .ztag{font-size:10.5px;color:#9AA1A8;letter-spacing:.04em;}
+  .zbody{padding:10px 13px;display:grid;gap:8px;}
+  .subbox{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 11px;}
+  .subbox .st{font-size:12px;font-weight:700;margin:0 0 3px;letter-spacing:.01em;}
+  .subbox .sl{font-size:11.5px;line-height:1.42;color:var(--muted);margin:0;}
+  .subbox .sl b{color:#2B3036;font-weight:600;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+  .chip{font-size:11px;border:1px solid var(--hair);background:#fff;border-radius:999px;padding:2px 9px;color:#2B3036;font-variant-numeric:tabular-nums;}
+
+  .down{display:flex;flex-direction:column;align-items:center;margin:5px 0;}
+  .down .g{font-size:16px;line-height:1;color:#9AA1A8;font-weight:700;}
+  .down .l{font-size:11px;color:var(--muted);margin-top:2px;text-align:center;max-width:90ch;}
+  .down .l b{color:#2B3036;font-weight:700;}
+
+  .ret{border:1px dashed var(--hair);border-radius:8px;background:#fff;padding:8px 11px;margin-top:8px;
+       font-size:11.5px;line-height:1.42;color:var(--muted);}
+  .ret b{color:#2B3036;font-weight:700;}
+
+  /* page 2 steps */
+  ol.steps{list-style:none;margin:0;padding:0;counter-reset:s;}
+  ol.steps li{position:relative;padding:0 0 13px 40px;counter-increment:s;font-size:13px;line-height:1.5;color:#2B3036;}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;width:26px;height:26px;border-radius:50%;
+       background:var(--ink);color:#fff;font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  ol.steps li b{font-weight:700;}
+  ol.steps li .where{display:inline-block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+       border:1px solid var(--hair);border-radius:999px;padding:1px 7px;margin-left:6px;vertical-align:1px;}
+
+  .ref{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .refcard{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--panel);}
+  .refcard h3{margin:0 0 6px;font-size:13px;font-weight:700;}
+  .refcard ul{margin:0;padding:0;list-style:none;}
+  .refcard li{font-size:12px;line-height:1.5;color:var(--muted);padding-left:13px;position:relative;}
+  .refcard li::before{content:"";position:absolute;left:0;top:7px;width:5px;height:5px;background:var(--ink);}
+  .refcard li b{color:#2B3036;font-weight:600;}
+
+  .docfoot{position:absolute;left:54px;right:54px;bottom:26px;border-top:1px solid var(--line);
+       padding-top:10px;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;}
+  .docfoot a{color:#2B3036;text-decoration:none;}
+
+  @media print{
+    body{background:#fff;padding:0;}
+    .page{box-shadow:none;margin:0;width:auto;min-height:auto;height:1123px;}
+    @page{size:A4;margin:0;}
+  }
+</style>
+
+<!-- PAGE 1 -->
+<div class="page">
+  <p class="eyebrow">Architecture &amp; End-to-End Flow</p>
+  <h1>How the Tribeca Task Tool works</h1>
+  <p class="sub">A plain-English instruction is understood by AI, confirmed by a person, turned into a real Google Calendar event and email, and the assignee's reply is captured back against the task. The flow below shows each node and exactly what lives inside it.</p>
+
+  <div class="zone">
+    <div class="zhead"><span class="zt">1 &nbsp; Browser — Frontend</span><span class="ztag">hosted on GitHub Pages</span></div>
+    <div class="zbody">
+      <div class="subbox">
+        <p class="st">Single-page app (docs/index.html)</p>
+        <p class="sl">Screens: <b>New Task</b>, <b>Confirm &amp; Edit</b>, <b>Dashboard</b> (search / filters / autocomplete), <b>Detail</b> (reply thread). Sends the <b>public anon key</b> on every request. Talks only to Supabase.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="down"><span class="g">&#9660;</span><span class="l"><b>2</b> &nbsp;User types an instruction &rarr; <b>POST /parse</b>&nbsp;&nbsp;·&nbsp;&nbsp;Dashboard loads via <b>GET /tasks</b></span></div>
+
+  <div class="zone">
+    <div class="zhead"><span class="zt">3 &nbsp; Supabase — back office</span><span class="ztag">database + serverless functions</span></div>
+    <div class="zbody" style="grid-template-columns:1fr 1fr;">
+      <div class="subbox">
+        <p class="st">Edge Functions (Deno · verify_jwt = false)</p>
+        <div class="chips"><span class="chip">parse</span><span class="chip">approve</span><span class="chip">tasks</span><span class="chip">inbound</span><span class="chip">app</span></div>
+      </div>
+      <div class="subbox">
+        <p class="st">OpenAI — called inside <b>/parse</b></p>
+        <p class="sl">Model: <b>gpt-4o-mini</b>, structured outputs (JSON schema, strict). Key read from <b>tt_config</b>, never leaves the server. First name then matched against <b>tt_contacts</b> for a real email.</p>
+      </div>
+      <div class="subbox" style="grid-column:1 / -1;">
+        <p class="st">Postgres tables</p>
+        <p class="sl">
+          <b>tt_tasks</b> — canonical task record (owns the task_id, status, calendar link, latest reply)&nbsp;&nbsp;·&nbsp;&nbsp;<b>tt_contacts</b> — known name &rarr; real full name + email<br>
+          <b>tt_config</b> — private settings: openai_api_key, n8n_outbound_webhook_url&nbsp;&nbsp;·&nbsp;&nbsp;<b>tt_replies</b> — full reply thread (one row per reply)
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="down"><span class="g">&#9660;</span><span class="l"><b>4</b> &nbsp;On approve &rarr; <b>POST /approve</b> saves the task, then sends the payload to the n8n webhook (URL from <b>tt_config</b>)</span></div>
+
+  <div class="zone">
+    <div class="zhead"><span class="zt">5 &nbsp; n8n — automation</span><span class="ztag">cloud (two workflows)</span></div>
+    <div class="zbody">
+      <div class="subbox">
+        <p class="st">Outbound workflow</p>
+        <p class="sl">Webhook &rarr; Is calendar_event? &rarr; <b>Create Calendar Event</b> (adds assignee as attendee &rarr; invite) &rarr; <b>Send Email</b> (subject tag <b>[Tribeca Task #id]</b>) &rarr; Respond (returns the calendar link).</p>
+      </div>
+      <div class="subbox">
+        <p class="st">Inbound workflow</p>
+        <p class="sl"><b>Gmail Trigger</b> (polls ~1 min) &rarr; <b>Extract + Clean</b> (reads the #id tag, strips quoted history) &rarr; <b>POST /inbound</b> (with the anon apikey header).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="down"><span class="g">&#9660;</span><span class="l"><b>6</b> &nbsp;n8n creates the event &amp; sends the email through Google</span></div>
+
+  <div class="zone">
+    <div class="zhead"><span class="zt">7 &nbsp; Google — Calendar + Gmail</span><span class="ztag">via n8n's authorized account</span></div>
+    <div class="zbody">
+      <div class="subbox">
+        <p class="st">What the assignee receives</p>
+        <p class="sl">A <b>Google Calendar invitation</b> (Accept / Maybe / Decline) and a <b>formatted email</b> with the event details and reply instructions.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="ret"><b>Reply loop —</b> The assignee replies to the email &rarr; it lands in the shared Gmail inbox &rarr; the n8n <b>Inbound</b> workflow picks it up within ~1 minute &rarr; <b>POST /inbound</b> &rarr; the reply is saved to <b>tt_replies</b> and the task status becomes <b>Reply received</b> &rarr; it appears on the Dashboard.</div>
+
+  <div class="docfoot">
+    <span>Tribeca Task Tool — Architecture &amp; Flow</span>
+    <span>Live app: tribecatest123.github.io/tribeca-task-tool &nbsp;·&nbsp; Page 1 of 2</span>
+  </div>
+</div>
+
+<!-- PAGE 2 -->
+<div class="page">
+  <p class="eyebrow">Architecture &amp; End-to-End Flow</p>
+  <h1>Step-by-step</h1>
+  <p class="sub">The same flow, described one step at a time, with the node each step runs in.</p>
+
+  <ol class="steps">
+    <li><b>Open &amp; type.</b> The user opens the app and types a plain-English instruction. <span class="where">Frontend · GitHub Pages</span></li>
+    <li><b>Understand.</b> The app calls <b>POST /parse</b>, which sends the text to OpenAI <b>gpt-4o-mini</b> with a strict JSON schema to extract the task fields. <span class="where">Supabase /parse → OpenAI</span></li>
+    <li><b>Resolve the person.</b> Still inside /parse, the first name is looked up in <b>tt_contacts</b>; a match replaces the assignee name and email with the real one. <span class="where">Supabase · tt_contacts</span></li>
+    <li><b>Confirm.</b> The structured fields fill the Confirm &amp; Edit card; the user reviews, edits if needed, and clicks Approve. <span class="where">Frontend</span></li>
+    <li><b>Save.</b> <b>POST /approve</b> generates the task_id, writes the row to <b>tt_tasks</b>, and reads the n8n webhook URL from <b>tt_config</b>. <span class="where">Supabase /approve</span></li>
+    <li><b>Hand off to automation.</b> /approve sends the task payload to the n8n Outbound webhook. <span class="where">Supabase → n8n</span></li>
+    <li><b>Create &amp; notify.</b> n8n branches on task type, creates the Google Calendar event (assignee added as attendee, so Google emails an invite), and sends the email tagged <b>[Tribeca Task #id]</b>; the returned calendar link is stored on <b>tt_tasks</b>. <span class="where">n8n → Google</span></li>
+    <li><b>Reply.</b> The assignee replies to the email; it arrives in the shared Gmail inbox. <span class="where">Google Gmail</span></li>
+    <li><b>Capture.</b> The Inbound Gmail Trigger polls (~1 min), Extract + Clean reads the #id and the reply text, and posts to <b>POST /inbound</b> with the anon apikey. <span class="where">n8n → Supabase /inbound</span></li>
+    <li><b>Store.</b> /inbound appends the reply to <b>tt_replies</b> and updates <b>tt_tasks</b> (status = Reply received). <span class="where">Supabase · tt_replies</span></li>
+    <li><b>View.</b> The Dashboard (<b>GET /tasks</b>) shows the task and its full reply thread. <span class="where">Frontend ← Supabase</span></li>
+  </ol>
+
+  <h2>Where each thing lives</h2>
+  <div class="ref">
+    <div class="refcard"><h3>Frontend (GitHub Pages)</h3><ul>
+      <li>Single-page app: <b>docs/index.html</b></li>
+      <li>Screens: New Task, Confirm, Dashboard, Detail</li>
+      <li>Sends the public anon key; calls Supabase only</li>
+    </ul></div>
+    <div class="refcard"><h3>Supabase (back office)</h3><ul>
+      <li>Functions: <b>parse, approve, tasks, inbound, app</b></li>
+      <li>AI: OpenAI <b>gpt-4o-mini</b> (inside /parse)</li>
+      <li>Tables: <b>tt_tasks, tt_contacts, tt_config, tt_replies</b></li>
+    </ul></div>
+    <div class="refcard"><h3>n8n (automation)</h3><ul>
+      <li>Outbound: Webhook → Calendar + Email → Respond</li>
+      <li>Inbound: Gmail Trigger → Extract → POST /inbound</li>
+      <li>Holds the authorized Google sign-in</li>
+    </ul></div>
+    <div class="refcard"><h3>Google</h3><ul>
+      <li>Calendar: the event + RSVP invite</li>
+      <li>Gmail: sends the email, receives the reply</li>
+      <li>Reply returns through n8n Inbound</li>
+    </ul></div>
+  </div>
+
+  <div class="docfoot">
+    <span>Tribeca Task Tool — Architecture &amp; Flow</span>
+    <span>github.com/Tribecatest123/tribeca-task-tool &nbsp;·&nbsp; Page 2 of 2</span>
+  </div>
+</div>
