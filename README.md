@@ -74,8 +74,9 @@ is **sent** (not drafted), reply detection uses the n8n **Gmail Trigger (polling
 
 - **Postgres** — `public.tt_tasks` owns the canonical `task_id`; `public.tt_contacts` maps a
   lowercased first name (`name_key`) to a real `full_name` + `email` for the parse override;
-  `public.tt_config` holds private key/value secrets. Namespaced `tt_*` because this Supabase
-  project also hosts an unrelated app.
+  `public.tt_config` holds private key/value secrets; `public.tt_replies` stores one row per
+  inbound reply (the full thread; `tt_tasks` also mirrors the latest reply). Namespaced `tt_*`
+  because this Supabase project also hosts an unrelated app.
 - **Edge functions** (Deno), all deployed with `verify_jwt = false` because the brief requires no
   auth and both the browser and n8n must reach them without a token:
   - `parse` — calls OpenAI, returns structured fields, **does not save**. After the model
@@ -192,6 +193,117 @@ account; within ~1 minute the reply appears on the task's detail view with statu
   The instant is correct; the calendar event lands in IST because the outbound payload carries the
   `+05:30` offset and the `timezone` field.
 
+## Handoff — current state & how to continue
+
+Full context for the next person picking this up. Where earlier sections and this one
+disagree, **this section is current.**
+
+### TL;DR
+A working **assessment** build. The full spine — type → parse → confirm → notify → reply → track —
+runs live with real Google Calendar events, real emails, and captured replies. Frontend on GitHub
+Pages, backend on Supabase, automation on n8n Cloud. Remaining work is a final end-to-end retest of
+the latest n8n node edits, plus the production-hardening list at the end.
+
+### Where everything runs
+- **Supabase** — project ref `vgeriftinzhuoivfavdp` (region ap-southeast-2). Postgres 17 + Edge Functions.
+- **GitHub** — repo `github.com/Tribecatest123/tribeca-task-tool` (currently **public**). Frontend is
+  served by **GitHub Pages** from `main` → `/docs`.
+- **n8n** — cloud instance `tribecatest.app.n8n.cloud`. Two workflows. Outbound production webhook:
+  `https://tribecatest.app.n8n.cloud/webhook/tribeca-task-outbound`.
+- **Google** — Calendar + Gmail via the single Google account authorized inside n8n. That same inbox
+  both **sends** the task emails and **receives** the replies (the Gmail Trigger polls it).
+
+### Secrets & config (values are NOT in the repo)
+| What | Where it lives | Notes |
+|---|---|---|
+| OpenAI API key | `tt_config.openai_api_key` (server-only) | read by `/parse`; model `gpt-4o-mini` |
+| n8n webhook URL | `tt_config.n8n_outbound_webhook_url` | read by `/approve` |
+| Supabase **anon** key | embedded in frontend + n8n inbound headers | **public by design** — safe |
+| Supabase **service_role** key | injected into Edge Functions automatically | never in the browser or repo |
+
+- View/update config with SQL: `select key from tt_config;` then
+  `insert into tt_config(key,value) values ('<k>','<v>') on conflict (key) do update set value = excluded.value;`
+- A **GitHub PAT** and the **OpenAI key** were used during the build. Rotate both per your security
+  policy. (The repo and frontend contain only the public anon key.)
+
+### Data model (Postgres, `public`)
+- `tt_tasks` — canonical task: `task_id` (PK), status, calendar link, latest-reply mirror, timestamps.
+- `tt_contacts` — `name_key` (lowercased first name) → `full_name` + `email`. Used by `/parse` to
+  replace fabricated `@example.com` addresses. Seeded: `darshak`, `kalpesh`.
+- `tt_config` — private key/value (the two secrets above).
+- `tt_replies` — one row per inbound reply (the thread). `/inbound` appends and de-dups against the
+  most recent identical reply.
+- Migrations: `0001` tasks, `0002` config, `0003` contacts, `0004` replies.
+
+### Edge Functions (Deno, `verify_jwt = false`)
+- `parse` — OpenAI `gpt-4o-mini` structured output, then `tt_contacts` override. Does not save.
+- `approve` — generates `task_id`, inserts `tt_tasks`, POSTs the payload to the n8n webhook (URL from
+  `tt_config`), stores returned status + calendar link.
+- `inbound` — appends the reply to `tt_replies`, mirrors latest onto `tt_tasks`, sets status
+  `Reply received`. De-dups vs the last reply. Publicly reachable.
+- `tasks` — `GET` list; `GET ?id=` returns the task **plus** its `replies[]` thread.
+- `app` — serves the page markup (canonical source), but is **not** the browser entry point.
+- **Deploy** via the Supabase Dashboard/CLI/MCP; keep `verify_jwt = false`. After editing the `app`
+  function, **regenerate the Pages copy**: fetch `/functions/v1/app`, replace
+  `location.origin + "/functions/v1"` with the absolute functions base, write to `docs/index.html`,
+  commit (Pages rebuilds in ~1 min).
+
+### Frontend (`docs/index.html` on GitHub Pages)
+- One self-contained file. `FN` points at the absolute functions base; sends the anon `apikey` on
+  every call (same-origin is not available because Supabase sandboxes served HTML — see
+  **Frontend hosting** above).
+- Screens: New Task (parse → confirm/edit → approve), Dashboard (search + autocomplete + type/status
+  filters, responsive card list, "showing N of M"), Detail (full reply thread). Footer links the
+  deck, the flow doc, and the GitHub source.
+
+### n8n workflows (`/n8n/*.json` are the source of truth)
+- **Outbound** — `Webhook → Is calendar_event?` → *calendar:* `Create Calendar Event` (assignee added
+  as **attendee**, **Send Updates = All** → real RSVP invite) → `Send Email (Calendar)` → `Respond`;
+  *reminder:* `Send Email (Reminder)` → `Respond`. Emails are **HTML**, time rendered in **IST**, the
+  n8n auto-attribution is **off**, footer reads "This task was created with the Tribeca Task Tool",
+  and the calendar email notes that a separate invite was sent.
+- **Inbound** — `Gmail Trigger` (~1 min poll) → `Subject contains tag?` → `Extract + Clean` (requires
+  a **`Re:`** subject so the original notification is never captured as a reply; reads `#id`; strips
+  quoted history + HTML entities) → `POST /inbound` (sends `apikey` + `Authorization` anon headers).
+- On a fresh import, credentials and the production webhook URL are stripped — re-attach Google OAuth
+  and re-set the webhook URL per [`n8n/SETUP.md`](n8n/SETUP.md). The latest node edits were applied
+  **directly in the live n8n** by the human and were being retested; re-importing the JSON gives the
+  same fixed versions.
+
+### Fixes already made (so you don't redo them)
+- anon `apikey`/`Authorization` headers on all frontend calls and the inbound node.
+- Frontend moved to GitHub Pages (Supabase sandboxes served HTML — `text/plain` + CSP `sandbox`).
+- `/parse` contacts override via `tt_contacts`.
+- `Send Email (Calendar)` read `$json.body` after the calendar node had replaced the item →
+  changed to `$node["Webhook"].json.body`.
+- Inbound was capturing the outbound notification → fixed with the `Re:` reply guard + better body/
+  quote cleaning.
+- Multiple replies now stored as a thread (`tt_replies`) and shown on the detail view.
+- UI overhaul: responsive cards, filters, autocomplete, success toast + dismiss, footer.
+- Stakeholder deck + 2-page architecture/flow doc (in `/docs`).
+
+### Outstanding / to verify
+- Final **end-to-end retest** after the latest live n8n edits: create a calendar task, approve,
+  confirm the formatted email + RSVP invite, reply twice from a mailbox you control, and confirm both
+  replies appear as a thread with status `Reply received`.
+
+### Production roadmap (not built — required before org-wide rollout)
+- **Login / authentication**, and locking down the currently-open endpoints (`verify_jwt = false`,
+  no apikey enforcement on this project).
+- **Employee directory** (name + email) and a **company database with name de-duplication**
+  (two "Kalpesh"/"Darshak" must be disambiguated).
+- **Edit a created task** (and re-notify).
+- **Calendar conflict warning** (clash detection) and **block scheduling in the past**.
+- **Private repository + Vercel hosting** with a clean domain.
+- **Audit log**, delivery/failure **alerts**, **role-based permissions**, **multi-time-zone** support,
+  and robust reply de-duplication (by message-id).
+
+### Quick test / smoke
+- UI: open the app → create → approve → reply → watch the Dashboard.
+- API (anon key as `apikey`): `GET /tasks`, `POST /parse {"text": "..."}`,
+  `POST /inbound {"task_id":"...","reply_text":"...","received_at":"..."}`.
+- DB: Supabase Dashboard SQL or MCP — `select * from tt_tasks order by created_at desc;`
+
 ## Repo layout
 ```
 supabase/
@@ -199,6 +311,7 @@ supabase/
   migrations/0001_create_tt_tasks.sql
   migrations/0002_create_tt_config.sql
   migrations/0003_create_tt_contacts.sql
+  migrations/0004_create_tt_replies.sql
 n8n/
   outbound_workflow.json
   inbound_workflow.json
